@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--This does not replace URDF, and is not an extension of URDF.
+    This is a format for representing semantic information about the robot structure.
+    A URDF file must exist for this robot as well, where the joints and the links that are referenced are defined
+-->
+<robot name="robot">
+    <!--GROUPS: Representation of a set of joints and links. This can be useful for specifying DOF to plan for, defining arms, end effectors, etc-->
+    <!--LINKS: When a link is specified, the parent joint of that link (if it exists) is automatically included-->
+    <!--JOINTS: When a joint is specified, the child link of that joint (which will always exist) is automatically included-->
+    <!--CHAINS: When a chain is specified, all the links along the chain (including endpoints) are included in the group. Additionally, all the joints that are parents to included links are also included. This means that joints along the chain and the parent joint of the base link are included in the group-->
+    <!--SUBGROUPS: Groups can also be formed by referencing to already defined group names-->
+    <group name="arm">
+        <joint name="virtual_joint"/>
+        <joint name="base_link_to_upper_base_link"/>
+        <joint name="upper_base_link_to_lower_link"/>
+        <joint name="virtual_upper_arm_joint"/>
+        <joint name="lower_link_to_upper_link"/>
+        <joint name="upper_link_to_end_effector"/>
+         <joint name="end_effector_to_tcp"/>
+    </group>
+    <group name="hand">
+        <joint name="left_finger_joint"/>
+        <joint name="right_finger_joint"/>
+        <joint name="end_effector_to_tcp"/>
+        <!-- remove above -->
+    </group>
+    <!--GROUP STATES: Purpose: Define a named state for a particular group, in terms of joint values. This is useful to define states like 'folded arms'-->
+    <group_state name="ready" group="arm">
+        <joint name="base_link_to_upper_base_link" value="0"/>
+        <joint name="lower_link_to_upper_link" value="0"/>
+        <joint name="upper_base_link_to_lower_link" value="0"/>
+    </group_state>
+    <group_state name="low" group="arm">
+        <joint name="base_link_to_upper_base_link" value="0"/>
+        <joint name="lower_link_to_upper_link" value="-1.1585"/>
+        <joint name="upper_base_link_to_lower_link" value="-0.4218"/>
+    </group_state>
+    <group_state name="open" group="hand">
+        <joint name="left_finger_joint" value="0.017"/>
+    </group_state>
+    <group_state name="half_close" group="hand">
+        <joint name="left_finger_joint" value="0.009"/>
+    </group_state>
+    <!--END EFFECTOR: Purpose: Represent information about an end effector.-->
+    <end_effector name="hand" parent_link="end_effector" parent_group="arm" group="hand"/>
+    <!--VIRTUAL JOINT: Purpose: this element defines a virtual joint between a robot link and an external frame of reference (considered fixed with respect to the robot)-->
+    <virtual_joint name="virtual_joint" type="fixed" parent_frame="world" child_link="base_link"/>
+    <!--PASSIVE JOINT: Purpose: this element is used to mark joints that are not actuated-->
+    <passive_joint name="right_finger_joint"/>
+    <passive_joint name="virtual_upper_arm_joint"/>
+    <passive_joint name="upper_link_to_end_effector"/>
+    <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
+    <disable_collisions link1="base_link" link2="lower_link" reason="Never"/>
+    <disable_collisions link1="base_link" link2="upper_base_link" reason="Adjacent"/>
+    <disable_collisions link1="base_link" link2="virtual_upper_arm_link" reason="Never"/>
+    <disable_collisions link1="end_effector" link2="left_finger" reason="Adjacent"/>
+    <disable_collisions link1="end_effector" link2="right_finger" reason="Adjacent"/>
+    <disable_collisions link1="end_effector" link2="upper_link" reason="Adjacent"/>
+    <disable_collisions link1="end_effector" link2="virtual_upper_arm_link" reason="Never"/>
+    <disable_collisions link1="left_finger" link2="right_finger" reason="Never"/>
+    <disable_collisions link1="left_finger" link2="upper_link" reason="Never"/>
+    <disable_collisions link1="left_finger" link2="virtual_upper_arm_link" reason="Never"/>
+    <disable_collisions link1="lower_link" link2="upper_base_link" reason="Adjacent"/>
+    <disable_collisions link1="lower_link" link2="upper_link" reason="Default"/>
+    <disable_collisions link1="lower_link" link2="virtual_upper_arm_link" reason="Adjacent"/>
+    <disable_collisions link1="right_finger" link2="upper_link" reason="Never"/>
+    <disable_collisions link1="right_finger" link2="virtual_upper_arm_link" reason="Never"/>
+    <disable_collisions link1="upper_base_link" link2="virtual_upper_arm_link" reason="Never"/>
+    <disable_collisions link1="upper_link" link2="virtual_upper_arm_link" reason="Adjacent"/>
+    <disable_collisions link1="tcp" link2="end_effector" reason="Adjacent"/>
+    <disable_collisions link1="tcp" link2="left_finger" reason="Adjacent"/>
+    <disable_collisions link1="tcp" link2="right_finger" reason="Adjacent"/>
+</robot>

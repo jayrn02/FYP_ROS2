@@ -1,0 +1,44 @@
+controller_manager:
+  ros__parameters:
+    # Parameters for the UnoStepperInterface hardware component
+    # These should match the 'name' attribute in the <hardware> tag in your URDF/XACRO
+    # If your <hardware> tag has a name attribute like <hardware name="MyHardware">, use that name here.
+    # If it doesn't have a name, these parameters might need to be directly under ros__parameters.
+    # Let's assume the hardware component itself doesn't have a specific name attribute *within* the <hardware> tag
+    # and the parameters are expected directly by the loaded plugin.
+
+    # --- Parameters for UnoStepperInterface ---
+    serial_port: "/dev/ttyACM0"  # *** IMPORTANT: Verify this is the correct port for your Arduino ***
+    baud_rate: 115200            # Match the baud rate set in your Arduino sketch
+
+    # --- Parameters for Controllers (if not in a separate controllers.yaml) ---
+    # Example for joint_state_broadcaster
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    # Example for arm_controller (adjust type and joints as needed)
+    arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+      joints:
+        - base_link_to_upper_base_link
+        - upper_base_link_to_arm_base_link
+        - arm_base_link_to_forearm_link
+      command_interfaces:
+        - position
+      state_interfaces:
+        - position
+        - velocity
+      # Gains (Optional, tune as needed)
+      # gains:
+      #   base_link_to_upper_base_link: { p: 100.0, d: 1.0, i: 1.0, i_clamp: 1.0 }
+      #   upper_base_link_to_arm_base_link: { p: 100.0, d: 1.0, i: 1.0, i_clamp: 1.0 }
+      #   arm_base_link_to_forearm_link: { p: 100.0, d: 1.0, i: 1.0, i_clamp: 1.0 }
+
+    # Example for hand_controller (if you have one)
+    # hand_controller:
+    #   type: gripper_controllers/GripperActionController # Or appropriate type
+    #   joint: your_gripper_joint # Replace with actual gripper joint name
+    #   command_interfaces:
+    #     - position
+    #   state_interfaces:
+    #     - position

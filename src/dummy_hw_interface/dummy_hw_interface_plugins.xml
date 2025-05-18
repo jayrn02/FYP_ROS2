@@ -1,0 +1,9 @@
+<library path="dummy_hw_interface">
+  <class name="dummy_hw_interface/DummyHardwareInterface"
+         type="dummy_hw_interface::DummyHardwareInterface"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>
+      A dummy hardware interface for ros2_control testing.
+    </description>
+  </class>
+</library>

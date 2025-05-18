@@ -1,0 +1,21 @@
+# Parameters for the UnoStepperInterface hardware component
+
+controller_manager: # Explicitly target the controller_manager node
+  ros__parameters:
+    # Parameters read by UnoStepperInterface::on_init
+
+    # --- Serial Communication ---
+    serial_port: /dev/ttyACM0       # *** VERIFY THIS PORT ***
+    baud_rate: 115200
+    timeout_ms: 1000
+
+    # --- Stepper Motor General Config ---
+    steps_per_revolution: 200
+    microstepping: 16
+
+    # --- Gripper Specific Parameters (Stepper) ---
+    gripper_range_meters: 0.05      # Example: Define the effective linear travel in meters (*** ADJUST IF NEEDED ***)
+    gripper_range_steps: 90         # *** Make sure this is the correct value for your STEPPER gripper ***
+
+    # --- Per-Joint Parameters ---
+    # REMOVED: These are now defined in robot.ros2_control.xacro using <param> tags

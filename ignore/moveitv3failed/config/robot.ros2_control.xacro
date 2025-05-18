@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <!-- Ensure initial_positions.yaml exists or handle its absence -->
+    <xacro:macro name="robot_ros2_control" params="name initial_positions_file">
+        <xacro:property name="initial_positions" value="${xacro.load_yaml(initial_positions_file)['initial_positions']}"/>
+
+        <ros2_control name="${name}" type="system">
+            <hardware>
+                <!-- Comment out your custom plugin -->
+                <!-- <plugin>uno_stepper_interface/UnoStepperInterface</plugin> -->
+
+                <!-- Add the mock components plugin -->
+                <plugin>mock_components/GenericSystem</plugin>
+
+                <!-- Hardware parameters from hardware_config.yaml might be ignored by mock_components,
+                     but joint parameters defined below might still be used for simulation limits/state -->
+            </hardware>
+            <joint name="base_link_to_upper_base_link">
+                <command_interface name="position"/>
+                <state_interface name="position">
+                  <param name="initial_value">${initial_positions['base_link_to_upper_base_link']}</param>
+                </state_interface>
+                <state_interface name="velocity"/>
+                 <!-- Parameters for this joint -->
+                 <param name="gear_ratio">4.5</param>
+                 <param name="home_offset_steps">3640</param>
+            </joint>
+            <joint name="upper_base_link_to_lower_link">
+                <command_interface name="position"/>
+                <state_interface name="position">
+                  <param name="initial_value">${initial_positions['upper_base_link_to_lower_link']}</param>
+                </state_interface>
+                <state_interface name="velocity"/>
+                 <!-- Parameters for this joint -->
+                 <param name="gear_ratio">4.5</param>
+                 <param name="home_offset_steps">1780</param>
+            </joint>
+            <joint name="lower_link_to_upper_link">
+                <command_interface name="position"/>
+                <state_interface name="position">
+                  <param name="initial_value">${initial_positions['lower_link_to_upper_link']}</param>
+                </state_interface>
+                <state_interface name="velocity"/>
+                 <!-- Parameters for this joint -->
+                 <param name="gear_ratio">4.5</param>
+                 <param name="home_offset_steps">665</param>
+            </joint>
+            <joint name="left_finger_joint">
+                <command_interface name="position"/>
+                <state_interface name="position">
+                  <param name="initial_value">${initial_positions['left_finger_joint']}</param>
+                </state_interface>
+                <state_interface name="velocity"/>
+                 <!-- Parameters for this joint (Adjust if gripper has gearing/offset) -->
+                 <param name="gear_ratio">1.0</param>
+                 <param name="home_offset_steps">0</param> <!-- Or E0_HOME_STEPS if applicable -->
+            </joint>
+
+        </ros2_control>
+    </xacro:macro>
+</robot>

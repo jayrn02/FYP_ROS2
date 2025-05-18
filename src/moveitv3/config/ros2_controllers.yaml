@@ -1,0 +1,58 @@
+# This config file is used by ros2_control
+controller_manager:
+  ros__parameters:
+    update_rate: 10  # Hz
+
+    # Declare controllers known to the manager
+    arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    hand_controller:
+      type: parallel_gripper_action_controller/GripperActionController
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+# Parameters for the Joint State Broadcaster
+joint_state_broadcaster:
+  ros__parameters:
+    # Specify the joints whose states should be broadcast
+    joints:
+      - base_link_to_upper_base_link
+      - upper_base_link_to_lower_link
+      - lower_link_to_upper_link
+      - left_finger_joint  # Add the gripper joint here too!
+    # Specify the state interfaces to broadcast for these joints
+    # Must match what the hardware interface provides
+    interfaces:
+      - position
+      - velocity # Even though velocity is zero, broadcast it if the interface exists
+
+# Parameters for the Arm Controller
+arm_controller:
+  ros__parameters:
+    # List of joints controlled by this controller
+    joints:
+      - base_link_to_upper_base_link
+      - upper_base_link_to_lower_link
+      - lower_link_to_upper_link
+    # Command interface type (must match hardware interface export)
+    command_interfaces:
+      - position
+    # State interfaces needed by the controller (must match hardware interface export)
+    state_interfaces:
+      - position
+      - velocity # JTC often uses velocity for feedback/feedforward
+    # Optional: Allow non-zero velocity at end (can help with smoother transitions)
+    allow_nonzero_velocity_at_trajectory_end: true
+    goal_time: 0.0 # Start executing immediately
+
+# Corrected Config:
+hand_controller:
+  ros__parameters:
+    joint: left_finger_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity

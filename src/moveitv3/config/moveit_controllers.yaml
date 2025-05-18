@@ -1,0 +1,25 @@
+moveit_controller_manager: moveit_simple_controller_manager/MoveItSimpleControllerManager 
+
+moveit_simple_controller_manager: 
+  # ros__parameters:
+  # List your controllers that MoveIt should use and find via ros2_control
+  controller_names:
+    - arm_controller
+    - hand_controller
+
+  arm_controller: # Name must match entry in controller_names and ros2_controllers.yaml
+    type: FollowJointTrajectory # joint_trajectory_controller/JointTrajectoryController # Type here often refers to the *action* type JTC provides
+    action_ns: follow_joint_trajectory # Default action namespace for JTC
+    default: true # Mark as default for the joints it controls
+    joints: # List ALL joints managed by this controller
+      - base_link_to_upper_base_link
+      - upper_base_link_to_lower_link
+      - lower_link_to_upper_link
+    
+
+  hand_controller: # Name must match entry in controller_names and ros2_controllers.yaml
+    type:  GripperCommand  # parallel_gripper_action_controller/GripperActionController # <-- Your corrected type seems reasonable here
+    action_ns: gripper_cmd # Action namespace for GripperActionController
+    default: true
+    joints:
+      - left_finger_joint

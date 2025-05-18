@@ -1,0 +1,375 @@
+// Version 3 :) // ... rest of comments ...
+
+#include <AccelStepper.h>
+#include <string.h> // Needed for strtok
+#include "config.h"
+#include "pinout_uno.h"
+#include "endstop.h"
+// #include "byj_gripper.h" // Comment out if header included later
+#include "logger.h"
+
+// --- AccelStepper Instances ---
+AccelStepper stepper_base(AccelStepper::DRIVER, Z_STEP_PIN, Z_DIR_PIN);
+AccelStepper stepper_shoulder(AccelStepper::DRIVER, Y_STEP_PIN, Y_DIR_PIN);
+AccelStepper stepper_elbow(AccelStepper::DRIVER, X_STEP_PIN, X_DIR_PIN);
+
+// Define Enable Pin
+#define ENABLE_PIN 8
+
+// --- BYJ Gripper ---
+// Pins A0-A3 (14-17)
+#define BYJ_PIN_0 14
+#define BYJ_PIN_1 15
+#define BYJ_PIN_2 16
+#define BYJ_PIN_3 17
+#include "byj_gripper.h" // Include header AFTER defining pins
+
+// Gripper Instantiation
+BYJ_Gripper gripper(BYJ_PIN_0, BYJ_PIN_1, BYJ_PIN_2, BYJ_PIN_3);
+
+long gripper_current_steps = 0;
+long gripper_target_steps = 0;
+
+// --- Endstops ---
+// Assuming Z_MIN_PIN (11) on UNO CNC Shield needs swap_pin = false
+Endstop endstopX(X_MIN_PIN, X_DIR_PIN, X_STEP_PIN, X_ENABLE_PIN, X_MIN_INPUT, X_HOME_STEPS, HOME_DWELL, false);
+Endstop endstopY(Y_MIN_PIN, Y_DIR_PIN, Y_STEP_PIN, Y_ENABLE_PIN, Y_MIN_INPUT, Y_HOME_STEPS, HOME_DWELL, false);
+Endstop endstopZ(Z_MIN_PIN, Z_DIR_PIN, Z_STEP_PIN, Z_ENABLE_PIN, Z_MIN_INPUT, Z_HOME_STEPS, HOME_DWELL, false); // Changed last argument to false based on user comment
+
+
+// --- Homing Constants ---
+const long base_home_steps = Z_HOME_STEPS;
+const long shoulder_home_steps = Y_HOME_STEPS;
+const long elbow_home_steps = X_HOME_STEPS;
+
+// --- Serial Communication ---
+String inputString = "";
+bool stringComplete = false;
+unsigned long lastStatusTime = 0;
+const long statusInterval = 100; // ms interval for sending status
+
+// --- Setup ---
+void setup() {
+    Serial.begin(BAUD);
+    inputString.reserve(200);
+
+    pinMode(ENABLE_PIN, OUTPUT);
+    digitalWrite(ENABLE_PIN, HIGH);
+
+    // Use slow speed/accel for setup/homing initially
+    long initial_speed = 20 * MICROSTEPS; // Slow speed for safety
+    long initial_accel = 400 * MICROSTEPS; // Slow accel for safety
+
+    // Configure AccelStepper - BASE
+    stepper_base.setEnablePin(ENABLE_PIN);
+    stepper_base.setPinsInverted(INVERSE_Z_STEPPER, false, true); // dir, step, enable
+    stepper_base.setMaxSpeed(initial_speed);
+    stepper_base.setAcceleration(initial_accel);
+    stepper_base.disableOutputs(); // Ensure disabled initially
+
+    // Configure AccelStepper - SHOULDER
+    stepper_shoulder.setEnablePin(ENABLE_PIN);
+    stepper_shoulder.setPinsInverted(INVERSE_Y_STEPPER, false, true); // dir, step, enable
+    stepper_shoulder.setMaxSpeed(initial_speed);
+    stepper_shoulder.setAcceleration(initial_accel);
+    stepper_shoulder.disableOutputs();
+
+    // Configure AccelStepper - ELBOW
+    stepper_elbow.setEnablePin(ENABLE_PIN);
+    stepper_elbow.setPinsInverted(INVERSE_X_STEPPER, false, true); // dir, step, enable
+    stepper_elbow.setMaxSpeed(initial_speed);
+    stepper_elbow.setAcceleration(initial_accel);
+    stepper_elbow.disableOutputs();
+
+    // Gripper setup
+    pinMode(BYJ_PIN_0, OUTPUT);
+    pinMode(BYJ_PIN_1, OUTPUT);
+    pinMode(BYJ_PIN_2, OUTPUT);
+    pinMode(BYJ_PIN_3, OUTPUT);
+
+    // Assume starts open (1200 steps corresponds to the 'open' state)
+    // This will be updated after homing if gripper homes too.
+    gripper_current_steps = 1200;
+    gripper_target_steps = gripper_current_steps;
+
+    Logger::logINFO("Starting Homing...");
+    // *** ADDED AUTOMATIC HOMING CALL ***
+    // This ensures the robot starts in a known state consistent with ROS expectations.
+
+    delay(1000);
+    executeHomingUNO();
+    // Note: executeHomingUNO sets stepper speeds/accels, then restores them.
+    // Set desired operational speeds/accels *after* homing.
+    // Example: Set operational speeds (adjust values as needed)
+    stepper_base.setMaxSpeed(400 * MICROSTEPS);
+    stepper_base.setAcceleration(200 * MICROSTEPS);
+    stepper_shoulder.setMaxSpeed(400 * MICROSTEPS);
+    stepper_shoulder.setAcceleration(200 * MICROSTEPS);
+    stepper_elbow.setMaxSpeed(400 * MICROSTEPS);
+    stepper_elbow.setAcceleration(200 * MICROSTEPS);
+
+
+    Logger::logINFO("Arduino Ready. Waiting for ROS commands.");
+} // End of setup()
+
+// --- Loop ---
+void loop() {
+    // Check for incoming serial data
+    serialEvent();
+
+    // Process complete command
+    if (stringComplete) {
+        processCommand(inputString);
+        inputString = ""; // Clear buffer
+        stringComplete = false;
+    }
+
+    // Run arm steppers (non-blocking)
+    stepper_base.run();
+    stepper_shoulder.run();
+    stepper_elbow.run();
+
+    // Update Gripper state (blocking based on difference)
+    // Consider making this non-blocking if delays are an issue
+    if (gripper_current_steps != gripper_target_steps) {
+        long diff = gripper_target_steps - gripper_current_steps;
+        if (diff > 0) {
+            gripper.cmdOn(diff); // Blocking call
+        } else {
+            gripper.cmdOff(-diff); // Blocking call
+        }
+        gripper_current_steps = gripper_target_steps;
+    }
+
+    // Send status periodically
+    // unsigned long now = millis();
+    // if (now - lastStatusTime >= statusInterval) {
+    //    sendStatus();
+    //    lastStatusTime = now;
+    // }
+} // End of loop()
+
+
+// --- Serial Handling --- (No changes needed)
+void serialEvent() {
+    while (Serial.available()) {
+        char inChar = (char)Serial.read();
+        inputString += inChar;
+        if (inChar == '\n') {
+            stringComplete = true;
+        }
+    }
+}
+
+// --- Command Processing ---
+void processCommand(String cmd) {
+    cmd.trim(); // Keep this
+    if (cmd.length() == 0) return; // Keep this
+
+    char commandType = cmd.charAt(0); // Keep this
+    String args = ""; // Keep this
+    if (cmd.length() > 1 && cmd.charAt(1) == ':') { // Keep this
+        args = cmd.substring(2); // Keep this
+    } else if (cmd.length() > 1) { // Keep this
+        // Handle cases like 'S' where there's no ':' but maybe extra chars?
+        // Or just treat single char commands without args
+        if (commandType != 'S' && commandType != 'H') { // Keep this logic, adjust if needed
+             // Logger::logERROR("Command format error for '" + String(commandType) + "'. Expected ':' or single char."); // <-- COMMENT OUT
+             return; // Keep this
+        }
+    }
+
+    switch (commandType) {
+        case 'S':
+            // No extra output here, just sends status
+            sendStatus(); // Keep this
+            break;
+
+        case 'M': // Move command: M:base,shoulder,elbow,gripper
+            { // Keep scope brackets
+                // Parse comma-separated values
+                long vals[4] = {0, 0, 0, 0}; // Keep this
+                int argIndex = 0; // Keep this
+                int lastComma = -1; // Keep this
+                for (int i = 0; i < args.length(); i++) { // Keep this loop
+                    if (args.charAt(i) == ',') { // Keep this
+                        if (argIndex < 4) { // Keep this
+                            vals[argIndex++] = args.substring(lastComma + 1, i).toInt(); // Keep this
+                        }
+                        lastComma = i; // Keep this
+                    }
+                }
+                // Get the last value
+                if (argIndex < 4) { // Keep this
+                    vals[argIndex] = args.substring(lastComma + 1).toInt(); // Keep this
+                }
+
+                // Check if parsing was successful (simple check for 4 args)
+                if (argIndex != 3) { // Check if exactly 4 values were processed (indices 0, 1, 2, 3)
+                     // Logger::logERROR("Invalid M format: Expected 4 comma-separated values. Got: " + args); // <-- COMMENT OUT
+                     break; // Keep this
+                }
+
+                // Optional: Add validation if needed (e.g., check if toInt() succeeded)
+
+                // Logger::logDEBUG("Move Cmd: B=" + String(vals[0]) + " S=" + String(vals[1]) + " E=" + String(vals[2]) + " G=" + String(vals[3])); // <-- COMMENT OUT
+
+                // Set target positions for steppers
+                stepper_base.moveTo(vals[0]); // Keep this
+                stepper_shoulder.moveTo(vals[1]); // Keep this
+                stepper_elbow.moveTo(vals[2]); // Keep this
+                // Gripper movement logic
+                gripper.moveTo(vals[3]); // Keep this (assuming 'gripper' is your BYJ object)
+            }
+            break;
+
+        case 'H': // Homing command
+            executeHomingUNO(); // Keep this
+            // Serial.println("OK"); // <-- COMMENT OUT
+            break;
+
+        case 'E': // Enable/Disable Steppers: E:1 (enable) or E:0 (disable)
+            { // Keep scope brackets
+                int enable_state = args.toInt(); // Keep this
+                // Basic validation: check if conversion worked and value is 0 or 1
+                if (args != "0" && args != "1") {
+                    // Logger::logERROR("Invalid E arg: Expected 0 or 1. Got: " + args); // <-- COMMENT OUT
+                    break; // Keep this
+                }
+                enableSteppers(enable_state == 1); // Keep this
+                // Serial.println("OK"); // <-- COMMENT OUT
+            }
+            break;
+
+        default:
+            // Logger::logERROR("Unknown command: " + cmd); // <-- COMMENT OUT
+            break;
+    }
+}
+
+// --- Send Status --- (No changes needed - already matches C++ read expectation)
+void sendStatus() {
+    String statusMsg = "S "; // Format matches C++ read() expectation
+    statusMsg += String(stepper_base.currentPosition());
+    statusMsg += " ";
+    statusMsg += String(stepper_shoulder.currentPosition());
+    statusMsg += " ";
+    statusMsg += String(stepper_elbow.currentPosition());
+    statusMsg += " ";
+    statusMsg += String(gripper_current_steps); // Report current gripper steps
+    Serial.println(statusMsg); // Use println to ensure newline termination
+}
+
+// --- Stepper Enable --- (No changes needed)
+void enableSteppers(bool enable) {
+    if (enable) {
+        digitalWrite(ENABLE_PIN, LOW); // LOW enables most drivers
+        stepper_base.enableOutputs();
+        stepper_shoulder.enableOutputs();
+        stepper_elbow.enableOutputs();
+        Logger::logDEBUG("Steppers Enabled");
+    } else {
+        stepper_base.disableOutputs();
+        stepper_shoulder.disableOutputs();
+        stepper_elbow.disableOutputs();
+        digitalWrite(ENABLE_PIN, HIGH); // HIGH disables most drivers
+        Logger::logDEBUG("Steppers Disabled");
+    }
+}
+
+// --- Homing Sequence (Adapted for AccelStepper) ---
+void executeHomingUNO() {
+    Logger::logINFO("Starting Homing Sequence (UNO)...");
+    enableSteppers(true);
+
+    long initialMaxSpeedB = stepper_base.maxSpeed(); // Store initial speeds/accels
+    long initialAccelB = stepper_base.acceleration();
+    long initialMaxSpeedS = stepper_shoulder.maxSpeed();
+    long initialAccelS = stepper_shoulder.acceleration();
+    long initialMaxSpeedE = stepper_elbow.maxSpeed();
+    long initialAccelE = stepper_elbow.acceleration();
+
+    // Use slow speed/accel for homing
+    long homeSpeed = 45 * MICROSTEPS; // Slow homing speed (steps/sec)
+    long homeAccel = 400 * MICROSTEPS; // Slow homing accel (steps/sec^2)
+
+    stepper_shoulder.setMaxSpeed(homeSpeed);
+    stepper_shoulder.setAcceleration(homeAccel);
+    stepper_elbow.setMaxSpeed(homeSpeed);
+    stepper_elbow.setAcceleration(homeAccel);
+    stepper_base.setMaxSpeed(homeSpeed);
+    stepper_base.setAcceleration(homeAccel);
+
+    Logger::logDEBUG("Homing Shoulder (Y) and Elbow (X)...");
+    // Move towards a large negative value. setPinsInverted handles the actual direction.
+    stepper_shoulder.moveTo(-1000000);
+    stepper_elbow.moveTo(-1000000);
+
+    while (!endstopY.state() || !endstopX.state()) {
+        if (!endstopY.state()) stepper_shoulder.run();
+        if (!endstopX.state()) stepper_elbow.run();
+        yield(); // Allow background tasks/serial handling
+    }
+
+    stepper_shoulder.stop(); // Stop smoothly using acceleration
+    stepper_elbow.stop();
+    stepper_shoulder.runToPosition(); // Complete the stop move
+    stepper_elbow.runToPosition();
+
+    stepper_shoulder.setCurrentPosition(0);
+    stepper_elbow.setCurrentPosition(0);
+    Logger::logDEBUG("Shoulder/Elbow switches hit.");
+
+    Logger::logDEBUG("Moving to offsets Y: " + String(shoulder_home_steps) + " X: " + String(elbow_home_steps));
+    // Move away from endstop (positive value). setPinsInverted handles the actual direction.
+    stepper_shoulder.moveTo(shoulder_home_steps);
+    stepper_elbow.moveTo(elbow_home_steps);
+    while(stepper_shoulder.distanceToGo() != 0 || stepper_elbow.distanceToGo() != 0) {
+         stepper_shoulder.run();
+         stepper_elbow.run();
+         yield();
+    }
+    stepper_shoulder.runToPosition();
+    stepper_elbow.runToPosition();
+
+    // Set position relative to the homed offset
+    stepper_shoulder.setCurrentPosition(shoulder_home_steps);
+    stepper_elbow.setCurrentPosition(elbow_home_steps);
+    Logger::logDEBUG("Shoulder/Elbow homing offset complete.");
+
+
+    Logger::logDEBUG("Homing Base (Z)...");
+    // Move towards a large negative value. setPinsInverted handles the actual direction.
+    stepper_base.moveTo(-1000000);
+    while (!endstopZ.state()) {
+        stepper_base.run();
+        yield();
+    }
+    stepper_base.stop(); // Stop smoothly
+    stepper_base.runToPosition(); // Complete the stop move
+    stepper_base.setCurrentPosition(0);
+    Logger::logDEBUG("Base switch hit.");
+
+    Logger::logDEBUG("Moving to offset Z: " + String(base_home_steps));
+    // Move away from endstop (positive value). setPinsInverted handles the actual direction.
+    stepper_base.moveTo(base_home_steps);
+    while(stepper_base.distanceToGo() != 0) {
+        stepper_base.run();
+        yield();
+    }
+    stepper_base.runToPosition();
+
+    // Set position relative to the homed offset
+    stepper_base.setCurrentPosition(base_home_steps);
+    Logger::logDEBUG("Base homing offset complete.");
+
+    // Restore original (or previously set operational) speed/accel
+    stepper_shoulder.setMaxSpeed(initialMaxSpeedS);
+    stepper_shoulder.setAcceleration(initialAccelS);
+    stepper_elbow.setMaxSpeed(initialMaxSpeedE);
+    stepper_elbow.setAcceleration(initialAccelE);
+    stepper_base.setMaxSpeed(initialMaxSpeedB);
+    stepper_base.setAcceleration(initialAccelB);
+
+    Logger::logINFO("Homing Complete.");
+} // End of executeHomingUNO()

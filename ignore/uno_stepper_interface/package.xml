@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>uno_stepper_interface</name>
+  <version>0.1.0</version>
+  <description>Hardware interface for UNO-based stepper motor robot arm using ros2_control</description>
+  <maintainer email="user@todo.todo">Your Name</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>hardware_interface</depend>
+  <depend>pluginlib</depend>
+  <!-- <<< REMOVED: <depend>serial_driver</depend> >>> -->
+  <depend>boost</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

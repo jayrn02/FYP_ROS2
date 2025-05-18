@@ -1,0 +1,55 @@
+# Settings for ros2_control controller manager
+controller_manager:
+  ros__parameters:
+    update_rate: 50 # Hz
+
+    # --- Controllers ---
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+      joints:
+        - base_link_to_upper_base_link
+        - upper_base_link_to_lower_link
+        - lower_link_to_upper_link
+      command_interfaces:
+        - position
+      state_interfaces:
+        - position
+        - velocity
+
+    # --- Temporarily Commented Out ---
+    hand_controller:
+      type: parallel_gripper_controllers/GripperActionController # Recommended Type
+      joint: left_finger_joint # The single *actuated* prismatic joint (right one mimics)
+      command_interfaces: # Types of commands this controller sends
+        - position
+      state_interfaces: # Types of states this controller reads
+        - position
+        - velocity # May be needed by this controller type too
+      # Optional settings for parallel_gripper_controllers:
+      # state_publish_rate: 50.0 # Defaults to update_rate
+      # action_monitor_rate: 20.0 # Defaults to 20
+      # goal_tolerance: 0.001 # Tolerance in meters for reaching goal
+    # --- End Commented Out ---
+
+    # --- Hardware Interface ---
+    hardware:
+      plugin: uno_stepper_interface/UnoStepperInterface
+      params: # Parameters passed to your plugin's on_init()
+        serial_port: "/dev/ttyACM0"
+        baud_rate: 115200
+        timeout_ms: 1000
+        gear_ratio: 4.5
+        steps_per_rev: 200
+        microstepping: 16
+        home_steps_base: 3740
+        home_steps_shoulder: 1720
+        home_steps_elbow: 680
+        gripper_steps_closed: 0
+        gripper_steps_open: 1200
+        gripper_meters_closed: 0.0
+        gripper_meters_open: 0.017
+        joint_names: ["base_link_to_upper_base_link", "upper_base_link_to_lower_link", "lower_link_to_upper_link", "left_finger_joint"]

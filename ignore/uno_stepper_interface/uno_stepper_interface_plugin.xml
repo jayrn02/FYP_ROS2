@@ -1,0 +1,9 @@
+<library path="uno_stepper_interface">
+  <class name="uno_stepper_interface/UnoStepperInterface"
+         type="uno_stepper_interface::UnoStepperInterface"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>
+      Hardware interface for UNO-based stepper robot arm connecting to Arduino via serial.
+    </description>
+  </class>
+</library>
