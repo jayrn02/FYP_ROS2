@@ -34,15 +34,15 @@ def generate_launch_description():
         name='static_baselink_to_camera_tf_publisher', # Descriptive name
         arguments=[
             # Use the new-style flags explicitly
-            '--x', '0.3172',     # New X
-            '--y', '-0.1016',    # New Y
-            '--z', '0.8372',     # New Z
-            '--qx', '0.9920',    # New qx
-            '--qy', '0.0420',    # New qy
-            '--qz', '-0.0280',   # New qz
-            '--qw', '-0.1160',   # New qw
-            '--frame-id', 'base_link', # Parent frame
-            '--child-frame-id', 'default_cam' # Child frame (your camera)
+            '--x', '-0.0009',
+            '--y', '-0.1829',
+            '--z', '0.8318',
+            '--qx', '-0.6871',
+            '--qy', '0.7220',
+            '--qz', '-0.0314',
+            '--qw', '0.0749',
+            '--frame-id', 'base_link',         # IMPORTANT: Keep as base_link
+            '--child-frame-id', 'default_cam'  # IMPORTANT: Keep as default_cam
         ]
     )
 
