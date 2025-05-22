@@ -1,0 +1,9 @@
+<library path="arduino_hw_interface">
+  <class name="arduino_hw_interface/ArduinoHardwareInterface"
+         type="arduino_hw_interface::ArduinoHardwareInterface"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>
+      Hardware interface for an Arduino controlled robot arm via serial.
+    </description>
+  </class>
+</library>

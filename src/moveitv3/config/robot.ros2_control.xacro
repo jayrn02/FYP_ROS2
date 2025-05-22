@@ -6,7 +6,7 @@
         <!-- Defines the ros2_control system component -->
         <ros2_control name="${name}" type="system">
             <hardware>
-                <plugin>dummy_hw_interface/DummyHardwareInterface</plugin>
+                <plugin>arduino_hw_interface/ArduinoHardwareInterface</plugin>
                 <!-- THIS DAMN LINE MAKE USRE TO CHANGE IT TO THE CORRECT CONTROLLER!!!!!!! -->
                 <!-- <plugin>uno_stepper_interface/UnoStepperInterface</plugin> -->
                 <!-- <plugin>mock_components/GenericSystem</plugin> -->
