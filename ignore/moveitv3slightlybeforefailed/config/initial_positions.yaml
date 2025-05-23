@@ -1,7 +1,0 @@
-# Default initial positions for robot's ros2_control fake system
-
-initial_positions:
-  base_link_to_upper_base_link: 0
-  left_finger_joint: 0
-  lower_link_to_upper_link: 0
-  upper_base_link_to_lower_link: 0
