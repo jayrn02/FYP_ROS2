@@ -114,8 +114,7 @@ std::string ArduinoHardwareInterface::receiveSerialLine(std::chrono::millisecond
                     RCLCPP_DEBUG(rclcpp::get_logger("ArduinoHardwareInterface"), "Received line: %s", trim(line_buffer).c_str());
                     return trim(line_buffer);
                 } else if (c == '\r') {
-                    // Ignore carriage return if it's not part of a CR+LF sequence (already handled by 
-)
+                    // Ignore carriage return if it's not part of a CR+LF sequence
                 } else if (isprint(c) || isspace(c)) { // Accept printable chars and spaces
                      line_buffer += c;
                      if (line_buffer.length() > 256) { // Safety break for extremely long lines
@@ -423,7 +422,14 @@ hardware_interface::return_type ArduinoHardwareInterface::read(
 
     for (size_t i = 0; i < joint_names_in_arduino_order_.size(); ++i) {
         const std::string& urdf_joint_name = joint_names_in_arduino_order_[i];
-        size_t urdf_joint_idx = info_.joints_map.at(urdf_joint_name).index; // Get correct index for hw_states_ based on URDF order
+        // Find the joint index
+        size_t urdf_joint_idx = 0;
+        for (size_t j = 0; j < info_.joints.size(); ++j) {
+            if (info_.joints[j].name == urdf_joint_name) {
+                urdf_joint_idx = j;
+                break;
+            }
+        }
 
         prev_hw_states_positions_[urdf_joint_idx] = hw_states_positions_[urdf_joint_idx]; // Store previous position
         hw_states_positions_[urdf_joint_idx] = arduinoToRosUnits(urdf_joint_name, current_arduino_steps[i]);
@@ -448,7 +454,14 @@ hardware_interface::return_type ArduinoHardwareInterface::write(
 
     for (size_t i = 0; i < joint_names_in_arduino_order_.size(); ++i) {
         const std::string& urdf_joint_name = joint_names_in_arduino_order_[i];
-        size_t urdf_joint_idx = info_.joints_map.at(urdf_joint_name).index; // Get correct index for hw_commands_ from URDF order
+        // Find the joint index
+        size_t urdf_joint_idx = 0;
+        for (size_t j = 0; j < info_.joints.size(); ++j) {
+            if (info_.joints[j].name == urdf_joint_name) {
+                urdf_joint_idx = j;
+                break;
+            }
+        }
 
         if (std::isnan(hw_commands_positions_[urdf_joint_idx])) {
             RCLCPP_ERROR(rclcpp::get_logger("ArduinoHardwareInterface"), "WRITE: NaN command for joint '%s'. Skipping write cycle.", urdf_joint_name.c_str());
