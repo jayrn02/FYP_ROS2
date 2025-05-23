@@ -63,7 +63,7 @@ class PixelTo3DNode(Node):
         if self.camera_model is None:
             self.get_logger().info(f"Received CameraInfo for '{msg.header.frame_id}'")
             self.camera_model = image_geometry.PinholeCameraModel()
-            self.camera_model.fromCameraInfo(msg)
+            self.camera_model.from_camera_info(msg) # Changed from fromCameraInfo
         # Optional: Could unsubscribe after receiving info if it's truly static
         # self.destroy_subscription(self.camera_info_sub)
 
@@ -81,7 +81,7 @@ class PixelTo3DNode(Node):
         # --- Calculate 3D Point in Camera Frame ---
         # Project pixel into a 3D ray (direction vector) in the camera frame
         # Z=1 is arbitrary, we just need the direction
-        ray_camera = self.camera_model.projectPixelTo3dRay((pixel_x, pixel_y))
+        ray_camera = self.camera_model.project_pixel_to_3d_ray((pixel_x, pixel_y)) # Changed from projectPixelTo3dRay
         # ray_camera is a unit vector (x, y, z) pointing from camera center through pixel
 
         # --- Get Transform from Camera Frame to Target Frame ---
