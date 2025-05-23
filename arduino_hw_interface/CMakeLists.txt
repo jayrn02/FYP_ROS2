@@ -16,6 +16,8 @@ add_library(arduino_hw_interface SHARED
   src/arduino_hw_interface.cpp
 )
 
+target_include_directories(arduino_hw_interface PUBLIC include)
+
 ament_target_dependencies(arduino_hw_interface
   rclcpp
   hardware_interface
