@@ -9,24 +9,60 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <depend>rclcpp</depend>
-  <depend>image_transport</depend>
-  <depend>camera_info_manager</depend>
+  <!-- Changed from <depend> to specific dependencies -->
+  <build_depend>rclcpp</build_depend>
+  <exec_depend>rclcpp</exec_depend>
+
+  <build_depend>image_transport</build_depend>
+  <exec_depend>image_transport</exec_depend>
+
+  <build_depend>camera_info_manager</build_depend>
+  <exec_depend>camera_info_manager</exec_depend>
+
   <exec_depend>image_pipeline</exec_depend>
+
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
-  <depend>sensor_msgs</depend>
-  <depend>geometry_msgs</depend>
-  <depend>cv_bridge</depend>
+
+  <!-- Changed from <depend> to specific dependencies -->
+  <build_depend>sensor_msgs</build_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+
+  <!-- Changed from <depend> to specific dependencies -->
+  <build_depend>geometry_msgs</build_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+
+  <build_depend>cv_bridge</build_depend>
+  <exec_depend>cv_bridge</exec_depend>
+
   <exec_depend>python3-opencv</exec_depend>
-  <depend>tf2_ros_py</depend>
-  <depend>image_geometry</depend>
-  <exec_depend>python3-numpy</exec_depend>
+
+  <!-- Changed from <depend> to specific dependencies -->
+  <build_depend>tf2_ros_py</build_depend> <!-- For Python TF -->
+  <exec_depend>tf2_ros_py</exec_depend>
+
+  <build_depend>image_geometry</build_depend>
+  <exec_depend>image_geometry</exec_depend>
+
+  <!-- Changed from <depend> to specific dependencies -->
+  <build_depend>tf2_ros</build_depend> <!-- General TF utilities -->
+  <exec_depend>tf2_ros</exec_depend>
+
+  <!-- Added for ParameterDescriptor and other rclpy utilities -->
+  <build_depend>rcl_interfaces</build_depend>
+  <exec_depend>rcl_interfaces</exec_depend>
   <exec_depend>python3-scipy</exec_depend>
-  <depend>vision_opencv</depend>
+  <exec_depend>python3-numpy</exec_depend>
+
+  <build_depend>vision_opencv</build_depend>
+  <exec_depend>vision_opencv</exec_depend>
 
 
   <export>
     <build_type>ament_cmake</build_type>
+    <scripts>
+      <executable>calculate_camera_pose.py</executable>
+      <executable>calculate_camera_pose_v2.py</executable>
+    </scripts>
   </export>
 </package>
