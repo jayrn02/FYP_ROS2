@@ -31,18 +31,18 @@ def generate_launch_description():
     static_tf_publisher = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
-        name='static_baselink_to_camera_tf_publisher', # Descriptive name
+        name='static_baselink_to_camera_tf_publisher',
         arguments=[
             # Use the new-style flags explicitly
-            '--x', '-0.0009',
-            '--y', '-0.1829',
-            '--z', '0.8318',
-            '--qx', '-0.6871',
-            '--qy', '0.7220',
-            '--qz', '-0.0314',
-            '--qw', '0.0749',
-            '--frame-id', 'base_link',         # IMPORTANT: Keep as base_link
-            '--child-frame-id', 'default_cam'  # IMPORTANT: Keep as default_cam
+            '--x', '0.4143',
+            '--y', '-0.0474',
+            '--z', '0.8265',
+            '--qx', '0.9235',
+            '--qy', '0.3422',
+            '--qz', '-0.0750',
+            '--qw', '-0.1565',
+            '--frame-id', 'base_link',
+            '--child-frame-id', 'default_cam'
         ]
     )
 
@@ -121,13 +121,4 @@ def generate_launch_description():
         static_tf_publisher,
         color_detector_node,
         pixel_to_3d_node # Add the new node here
-    ])
-
-
-    # Return usb_cam and the container
-    return LaunchDescription([
-        usb_cam_node,
-        image_proc_container,
-	static_tf_publisher,
-	color_detector_node
     ])

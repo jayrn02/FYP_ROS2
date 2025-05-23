@@ -34,8 +34,10 @@ install(DIRECTORY
 )
 
 install(PROGRAMS
-  robot_vision/color_detector.py # Path relative to CMakeLists.txt
-  robot_vision/pixel_to_3d.py
-  DESTINATION lib/${PROJECT_NAME} # Install to standard Python location
+  robot_vision/color_detector.py # Corrected path
+  robot_vision/pixel_to_3d.py    # Corrected path
+  script/calculate_camera_pose.py
+  script/calculate_camera_pose_v2.py
+  DESTINATION lib/${PROJECT_NAME}
 )
 ament_package()

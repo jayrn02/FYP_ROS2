@@ -60,9 +60,5 @@
 
   <export>
     <build_type>ament_cmake</build_type>
-    <scripts>
-      <executable>calculate_camera_pose.py</executable>
-      <executable>calculate_camera_pose_v2.py</executable>
-    </scripts>
   </export>
 </package>
