@@ -87,10 +87,13 @@ def main():
 
     # --- Output Static Transform Publisher Command ---
     print("\nExample command for static_transform_publisher (adjust frames if needed):")
-    print("ros2 run tf2_ros static_transform_publisher --frame-id {} --child-frame-id {} \\".format(args.world_frame, args.camera_frame))
-    print("  --trans {:.4f} {:.4f} {:.4f} \\".format(t_camera_world[0], t_camera_world[1], t_camera_world[2]))
-    print("  --quat {:.4f} {:.4f} {:.4f} {:.4f}".format(q_camera_world[0], q_camera_world[1], q_camera_world[2], q_camera_world[3]))
-    print("-" * 50)
+    t = t_camera_world
+    q = q_camera_world # Assuming this is [qx, qy, qz, qw]
+    print(f"ros2 run tf2_ros static_transform_publisher \\")
+    print(f"  --x {t[0]:.4f} --y {t[1]:.4f} --z {t[2]:.4f} \\")
+    print(f"  --qx {q[0]:.4f} --qy {q[1]:.4f} --qz {q[2]:.4f} --qw {q[3]:.4f} \\")
+    print(f"  --frame-id world --child-frame-id camera_link")
+    print("--------------------------------------------------")
 
 
 if __name__ == "__main__":
